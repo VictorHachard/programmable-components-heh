@@ -4,7 +4,9 @@
       "Bash(for f:*)",
       "Bash(do echo:*)",
       "Read(//c/Users/admin/Documents/GitHub/programmable-components-heh/**)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(for d:*)",
+      "Read(//c/Users/admin/Documents/GitHub/programmable-components-heh/$d/**)"
     ]
   }
 }
