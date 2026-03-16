@@ -128,15 +128,22 @@ begin
         end if;
     end process proc;
 
-    -- Instanciation du décodeur 7 segments
-    -- On passe les bits [20..23] du compteur (inversés car actifs-bas)
-    -- aux 4 entrées de SSegments. NOT NBRE(20) = '1' quand le bit est 0.
-    -- Les bits hauts du compteur changent lentement : affichage visible à l'oeil
+    -- Instanciation du décodeur 7 segments.
+    -- On passe 4 bits consécutifs du compteur (inversés car actifs-bas).
+    --
+    -- CHOIX DES BITS :
+    --   Simulation  (clk testbench ≈ 10 MHz, période 100 ns) :
+    --     bits 3-6  => bit 3 change toutes les 800 ns  : visible dans EPWave
+    --   Vrai matériel (clk FPGA = 50 MHz) :
+    --     bits 19-22 => bit 19 change toutes les ~21 ms : visible à l'oeil nu
+    --
+    -- Ici réglé sur bits 3-6 pour que la simulation fonctionne.
+    -- Pour la synthèse sur carte, remplacer par NBRE(19..22) ou NBRE(20..23).
     inst_SSegments : SSegments port map (
-        NOT NBRE(20),   -- BP0 reçoit l'inverse du bit 20
-        NOT NBRE(21),   -- BP1 reçoit l'inverse du bit 21
-        NOT NBRE(22),   -- BP2 reçoit l'inverse du bit 22
-        NOT NBRE(23),   -- BP3 reçoit l'inverse du bit 23 (poids fort)
+        NOT NBRE(3),    -- BP0 reçoit l'inverse du bit 3
+        NOT NBRE(4),    -- BP1 reçoit l'inverse du bit 4
+        NOT NBRE(5),    -- BP2 reçoit l'inverse du bit 5
+        NOT NBRE(6),    -- BP3 reçoit l'inverse du bit 6 (poids fort)
         DP, G, F, E, D, C, B, A   -- sorties vers les segments
     );
 

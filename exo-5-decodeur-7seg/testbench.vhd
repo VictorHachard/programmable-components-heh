@@ -4,15 +4,20 @@
 -- Parcourt les 16 valeurs possibles (0..F) en changeant les
 -- boutons toutes les 200 ns.
 --
--- RAPPEL : les boutons sont ACTIFS-BAS sur la carte physique.
---   Dans ce testbench, BP=0 = touche enfoncée = valeur prise en compte.
---   La logique d'inversion est dans le design (NOT Boutons).
+-- LOGIQUE D'ENTRÉE :
+--   Les boutons sont ACTIFS-BAS : BP='0' = touche enfoncée.
+--   Le design fait "with NOT Boutons select", donc :
+--     pour afficher le chiffre N, il faut NOT Boutons = binaire(N)
+--     ce qui donne Boutons = NOT(binaire(N))
+--     ce qui donne chaque BPx = inverse du bit correspondant de N
 --
--- Exemple de lecture des résultats dans EPWave :
---   Quand BP0=0 BP1=0 BP2=0 BP3=0 => affiche 0
---   (code envoyé aux segments : NOT "00111111" = "11000000")
---   Les segments A='0' B='0' C='0' D='0' E='0' F='0' = allumés
---   Les segments G='1' DP='1' = éteints
+--   Exemple : afficher 0 (binaire 0000)
+--     NOT Boutons = "0000" → Boutons = "1111" → BP0=1 BP1=1 BP2=1 BP3=1
+--     (= aucun bouton enfoncé = valeur 0, logique active-bas)
+--
+--   Exemple : afficher 1 (binaire 0001)
+--     NOT Boutons = "0001" → Boutons = "1110" → BP0=0 BP1=1 BP2=1 BP3=1
+--     (= seulement BP0 enfoncé)
 -- ============================================================
 
 library ieee;
@@ -33,7 +38,8 @@ architecture testbench_arch of Decodeur7Seg_tb is
     end component;
 
     -- Signaux internes (suffixe 's')
-    signal BP0s, BP1s, BP2s, BP3s            : std_logic := '0';
+    -- Initialisés à '1' : aucun bouton enfoncé = affiche 0 au démarrage
+    signal BP0s, BP1s, BP2s, BP3s            : std_logic := '1';
     signal DPs, Gs, Fs, Es, Ds, Cs, Bs, As  : std_logic := '0';
 
 begin
@@ -47,27 +53,30 @@ begin
     );
 
     -- Process de stimulus : teste les 16 chiffres hex (0..F)
-    -- BP0 = bit 0 (poids faible), BP3 = bit 3 (poids fort)
-    -- Tous les boutons à 0 = valeur sélectionnée (logique active-bas)
+    -- Règle : BP = NOT(binaire du chiffre à afficher)
+    --   BP0 = bit 0 (poids faible), BP3 = bit 3 (poids fort)
+    --   BP='0' = bit à 1 dans la valeur (bouton enfoncé)
+    --   BP='1' = bit à 0 dans la valeur (bouton relâché)
     SimuEntrees : process
     begin
         boucle : loop
-            wait for 200 ns; BP0s<='0'; BP1s<='0'; BP2s<='0'; BP3s<='0'; -- affiche 0
-            wait for 200 ns; BP0s<='1'; BP1s<='0'; BP2s<='0'; BP3s<='0'; -- affiche 1
-            wait for 200 ns; BP0s<='0'; BP1s<='1'; BP2s<='0'; BP3s<='0'; -- affiche 2
-            wait for 200 ns; BP0s<='1'; BP1s<='1'; BP2s<='0'; BP3s<='0'; -- affiche 3
-            wait for 200 ns; BP0s<='0'; BP1s<='0'; BP2s<='1'; BP3s<='0'; -- affiche 4
-            wait for 200 ns; BP0s<='1'; BP1s<='0'; BP2s<='1'; BP3s<='0'; -- affiche 5
-            wait for 200 ns; BP0s<='0'; BP1s<='1'; BP2s<='1'; BP3s<='0'; -- affiche 6
-            wait for 200 ns; BP0s<='1'; BP1s<='1'; BP2s<='1'; BP3s<='0'; -- affiche 7
-            wait for 200 ns; BP0s<='0'; BP1s<='0'; BP2s<='0'; BP3s<='1'; -- affiche 8
-            wait for 200 ns; BP0s<='1'; BP1s<='0'; BP2s<='0'; BP3s<='1'; -- affiche 9
-            wait for 200 ns; BP0s<='0'; BP1s<='1'; BP2s<='0'; BP3s<='1'; -- affiche A (10)
-            wait for 200 ns; BP0s<='1'; BP1s<='1'; BP2s<='0'; BP3s<='1'; -- affiche b (11)
-            wait for 200 ns; BP0s<='0'; BP1s<='0'; BP2s<='1'; BP3s<='1'; -- affiche C (12)
-            wait for 200 ns; BP0s<='1'; BP1s<='0'; BP2s<='1'; BP3s<='1'; -- affiche d (13)
-            wait for 200 ns; BP0s<='0'; BP1s<='1'; BP2s<='1'; BP3s<='1'; -- affiche E (14)
-            wait for 200 ns; BP0s<='1'; BP1s<='1'; BP2s<='1'; BP3s<='1'; -- affiche F (15)
+            -- chiffre : BP3 BP2 BP1 BP0  (BP = inverse du bit)
+            wait for 200 ns; BP3s<='1'; BP2s<='1'; BP1s<='1'; BP0s<='1'; -- affiche 0  (0000)
+            wait for 200 ns; BP3s<='1'; BP2s<='1'; BP1s<='1'; BP0s<='0'; -- affiche 1  (0001)
+            wait for 200 ns; BP3s<='1'; BP2s<='1'; BP1s<='0'; BP0s<='1'; -- affiche 2  (0010)
+            wait for 200 ns; BP3s<='1'; BP2s<='1'; BP1s<='0'; BP0s<='0'; -- affiche 3  (0011)
+            wait for 200 ns; BP3s<='1'; BP2s<='0'; BP1s<='1'; BP0s<='1'; -- affiche 4  (0100)
+            wait for 200 ns; BP3s<='1'; BP2s<='0'; BP1s<='1'; BP0s<='0'; -- affiche 5  (0101)
+            wait for 200 ns; BP3s<='1'; BP2s<='0'; BP1s<='0'; BP0s<='1'; -- affiche 6  (0110)
+            wait for 200 ns; BP3s<='1'; BP2s<='0'; BP1s<='0'; BP0s<='0'; -- affiche 7  (0111)
+            wait for 200 ns; BP3s<='0'; BP2s<='1'; BP1s<='1'; BP0s<='1'; -- affiche 8  (1000)
+            wait for 200 ns; BP3s<='0'; BP2s<='1'; BP1s<='1'; BP0s<='0'; -- affiche 9  (1001)
+            wait for 200 ns; BP3s<='0'; BP2s<='1'; BP1s<='0'; BP0s<='1'; -- affiche A  (1010)
+            wait for 200 ns; BP3s<='0'; BP2s<='1'; BP1s<='0'; BP0s<='0'; -- affiche b  (1011)
+            wait for 200 ns; BP3s<='0'; BP2s<='0'; BP1s<='1'; BP0s<='1'; -- affiche C  (1100)
+            wait for 200 ns; BP3s<='0'; BP2s<='0'; BP1s<='1'; BP0s<='0'; -- affiche d  (1101)
+            wait for 200 ns; BP3s<='0'; BP2s<='0'; BP1s<='0'; BP0s<='1'; -- affiche E  (1110)
+            wait for 200 ns; BP3s<='0'; BP2s<='0'; BP1s<='0'; BP0s<='0'; -- affiche F  (1111)
         end loop boucle;
     end process SimuEntrees;
 
